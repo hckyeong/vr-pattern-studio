@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 400">
+  <title>배치 검증용 탑</title>
+  <path fill="#202020" d="M40 10H75V40H105V10H135V40H165V10H200V70H183L210 365H230V390H10V365H30L57 70H40Z"/>
+  <path fill="#ffffff" d="M98 110Q120 76 142 110V170H98Z M98 258Q120 224 142 258V365H98Z"/>
+  <g fill="none" stroke="#ffffff" stroke-width="5">
+    <path d="M52 95H96 M144 95H187 M48 145H94 M146 145H192 M44 195H196 M40 245H95 M146 245H200 M35 295H94 M146 295H205 M31 345H94 M146 345H209"/>
+  </g>
+</svg>

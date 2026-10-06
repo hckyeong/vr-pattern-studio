@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.npm-cache/
+*.tsbuildinfo
+tmp/
+test-results/
+output/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+
+# 로컬 작업 계획과 내부 검증 기록은 공개 배포에 포함하지 않습니다.
+docs/VR_패턴_생성기_개발계획서.md
+docs/구현_검증_결과.md

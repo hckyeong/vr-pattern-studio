@@ -1,0 +1,33 @@
+{
+  "name": "vr-pattern-studio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "clipper2-ts": "^2.0.1-18",
+    "color-string": "^2.1.4",
+    "lucide-react": "^1.52.0",
+    "rbush": "^4.0.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "svgpath": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/color-string": "^1.5.5",
+    "@types/node": "^26.6.4",
+    "@types/rbush": "^4.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^29.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3"
+  }
+}
