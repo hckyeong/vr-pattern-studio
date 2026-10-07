@@ -1,5 +1,15 @@
 import { areaD, areaPathsD, differenceD, EndType, FillRule, inflatePathsD, intersectD, JoinType, unionD } from 'clipper2-ts';
+import RBush from 'rbush';
 import type { Bounds, Point, Polygon } from './types';
+
+interface CollisionSegment extends Bounds { start: Point; end: Point }
+export interface PreparedCollision {
+  readonly paths: Polygon[];
+  readonly bounds: Readonly<Bounds>;
+  readonly segmentCount: number;
+}
+// 선분 인덱스는 공개 준비 자료에서 분리해 외부 변경을 막고 수명도 함께 관리한다.
+const collisionIndexes = new WeakMap<PreparedCollision, RBush<CollisionSegment>>();
 
 /** 사각형 외곽선을 양의 방향으로 만든다. */
 export function rectangle(x: number, y: number, width: number, height: number): Polygon[] {
@@ -47,6 +57,42 @@ export function pathsConflict(a: Polygon[], b: Polygon[], gap: number): boolean 
   for (const pa of a) for (const pb of b) for (let i = 0; i < pa.length; i++) for (let j = 0; j < pb.length; j++) {
     const p = pa[i], q = pa[(i + 1) % pa.length], r = pb[j], s = pb[(j + 1) % pb.length];
     if (Math.min(pointDistance(p, r, s), pointDistance(q, r, s), pointDistance(r, p, q), pointDistance(s, p, q)) < threshold) return true;
+  }
+  return false;
+}
+/** 원본 경로와 분리한 불변 좌표 및 닫힌 경계 선분의 공간 인덱스를 준비한다. */
+export function prepareCollision(paths: Polygon[]): PreparedCollision {
+  const snapshot = paths.map(path => path.map(point => Object.freeze({ x: point.x, y: point.y })));
+  const segments: CollisionSegment[] = [];
+  for (const path of snapshot) {
+    for (let index = 0; index < path.length; index++) {
+      const start = path[index], end = path[(index + 1) % path.length];
+      segments.push({ start, end, minX: Math.min(start.x, end.x), minY: Math.min(start.y, end.y), maxX: Math.max(start.x, end.x), maxY: Math.max(start.y, end.y) });
+    }
+    Object.freeze(path);
+  }
+  Object.freeze(snapshot);
+  const prepared = Object.freeze({ paths: snapshot, bounds: Object.freeze(boundsOf(snapshot)), segmentCount: segments.length });
+  collisionIndexes.set(prepared, new RBush<CollisionSegment>().load(segments));
+  return prepared;
+}
+/** 기존 교집합·거리 판정은 유지하고 가까운 경계 선분만 공간 인덱스로 검색한다. */
+export function pathsConflictPrepared(a: Polygon[], prepared: PreparedCollision, gap: number): boolean {
+  if (pathsArea(intersectPaths(a, prepared.paths)) > 1e-12) return true;
+  if (!prepared.segmentCount) return false;
+  const index = collisionIndexes.get(prepared)!;
+  const distance = Math.max(0.000001, gap - 0.000001), threshold = distance ** 2;
+  const boundsScale = Math.max(1, Math.abs(prepared.bounds.minX), Math.abs(prepared.bounds.minY), Math.abs(prepared.bounds.maxX), Math.abs(prepared.bounds.maxY));
+  for (const path of a) for (let segment = 0; segment < path.length; segment++) {
+    const p = path[segment], q = path[(segment + 1) % path.length];
+    // 좌표 규모에 따른 반올림 여유는 검색에만 적용하고 최종 거리 임계값은 바꾸지 않는다.
+    const scale = Math.max(boundsScale, Math.abs(p.x), Math.abs(p.y), Math.abs(q.x), Math.abs(q.y));
+    const radius = distance + Number.EPSILON * scale * 16;
+    const nearby = index.search({ minX: Math.min(p.x, q.x) - radius, minY: Math.min(p.y, q.y) - radius, maxX: Math.max(p.x, q.x) + radius, maxY: Math.max(p.y, q.y) + radius });
+    for (const candidate of nearby) {
+      const r = candidate.start, s = candidate.end;
+      if (Math.min(pointDistance(p, r, s), pointDistance(q, r, s), pointDistance(r, p, q), pointDistance(s, p, q)) < threshold) return true;
+    }
   }
   return false;
 }

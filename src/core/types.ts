@@ -4,6 +4,19 @@ export type ShapeKind = 'triangle' | 'polygon' | 'frame' | 'arc' | 'symbol' | 'c
 export type Unit = 'mm' | 'cm' | 'm' | 'px';
 export type DictionaryName = '4x4_1000' | '5x5_1000' | '6x6_1000';
 
+export interface FillMask {
+  name: string;
+  /** 분석 해상도로 줄이기 전 원본 이미지의 세로/가로 비율을 보존한다. */
+  aspect: number;
+  /** 분석한 이미지의 픽셀 크기와 흰색 판정 기준을 기록한다. */
+  width: number;
+  height: number;
+  threshold: number;
+  fit: 'contain' | 'stretch';
+  /** 이미지의 가로·세로를 각각 1로 정규화한 흰 영역이며 내부 구멍도 보존한다. */
+  paths: Polygon[];
+}
+
 export interface SvgArtwork {
   name: string;
   /** 원본 윤곽을 가로 1의 좌표계로 정규화하고 세로/가로 비율을 저장한다. */
@@ -13,8 +26,16 @@ export interface SvgArtwork {
   x: number;
   y: number;
   widthRatio: number;
+  /** SVG 중심을 기준으로 시계 방향으로 회전하는 각도이며 생략하면 0도다. */
+  rotation?: number;
   /** 최외곽 배치는 내부 구멍을 보호하고 도형의 형태를 유지해 윤곽 가까이 옮긴다. */
   avoidance: 'silhouette' | 'outline' | 'bounds';
+  /** 오차 기반 간략화에서 원본 너비 대비 허용 오차이며 미지정 또는 0이면 원본을 사용한다. */
+  contourTolerance?: number;
+  /** 미지정은 기존 오차 기반 간략화이고 grouped-hull은 근접 덩어리별 볼록 껍질을 쓴다. */
+  contourMode?: 'simplify' | 'grouped-hull';
+  /** 볼록 껍질로 함께 묶을 조각 사이 거리이며 SVG 너비 대비 비율이다. */
+  hullMergeRatio?: number;
 }
 
 export interface PatternSettings {
@@ -41,6 +62,10 @@ export interface PatternSettings {
   /** 이전 시안에 계단 비중이 없으면 0으로 취급한다. */
   weights: Record<Exclude<ShapeKind, 'stair'>, number> & { stair?: number };
   artwork?: SvgArtwork;
+  /** 여러 SVG의 그리기 순서이며 기존 단일 artwork 설정과 함께 사용하지 않는다. */
+  artworks?: SvgArtwork[];
+  /** 흑백 이미지에서 추출한 흰 영역 안으로 일반 패턴을 잘라 배치한다. */
+  fillMask?: FillMask;
   markers: {
     enabled: boolean;
     dictionary: DictionaryName;
@@ -131,7 +156,12 @@ export interface SheetRegion {
   height: number;
 }
 
+export interface WorkerRequest {
+  requestId: number;
+  settings: PatternSettings;
+}
+
 export type WorkerResponse =
-  | { type: 'progress'; value: GenerationProgress }
-  | { type: 'result'; value: PatternResult }
-  | { type: 'error'; message: string };
+  | { requestId: number; type: 'progress'; value: GenerationProgress }
+  | { requestId: number; type: 'result'; value: PatternResult }
+  | { requestId: number; type: 'error'; message: string };

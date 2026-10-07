@@ -1,8 +1,9 @@
 import type { PatternSettings, ResolvedCanvas, ShapeKind, Unit } from './types';
-import { validArtwork } from './artwork';
+import { MAX_ARTWORKS, MAX_ARTWORK_POINTS, validArtwork } from './artwork';
 import { validColors } from './colors';
+import { validFillMask } from './fillMask';
 
-export const GENERATOR_VERSION = '1.5.0';
+export const GENERATOR_VERSION = '1.9.0';
 export const UNIT_MM: Record<Unit, number> = { mm: 1, cm: 10, m: 1000, px: 1 };
 export const SHAPE_LABELS: Record<ShapeKind, string> = {
   triangle: '삼각형', polygon: '다각형', frame: '열린 프레임', arc: '원·원호', symbol: '십자·빗금', cylinder: '원통', stair: '계단',
@@ -53,12 +54,18 @@ export function resolveCanvas(settings: PatternSettings): ResolvedCanvas {
   };
 }
 
-/** 생성 전에 입력 범위와 서로 충돌하는 설정을 점검한다. */
+/** 생성 전 채움 마스크와 복수 SVG 및 나머지 설정 범위를 검증한다. */
 export function validateSettings(settings: PatternSettings): string[] {
   const errors: string[] = [];
   if (!settings || typeof settings !== 'object') return ['설정 형식이 올바르지 않습니다.'];
+  if (settings.fillMask !== undefined && !validFillMask(settings.fillMask)) errors.push('흰색 채움 영역 데이터가 올바르지 않습니다. 이미지를 다시 불러와 주세요.');
   if (settings.colors !== undefined && !validColors(settings.colors)) errors.push('팔레트는 배경색과 1~32개의 RGB 색상으로 구성하고, 한 색 이상의 비중을 0보다 크게 지정해 주세요.');
   if (settings.artwork !== undefined && !validArtwork(settings.artwork)) errors.push('삽입 SVG의 벡터 데이터나 배치 값이 올바르지 않습니다. 파일을 다시 불러와 주세요.');
+  if (settings.artworks !== undefined) {
+    if (settings.artwork !== undefined) errors.push('단일 SVG와 복수 SVG 설정을 동시에 지정할 수 없습니다.');
+    if (!Array.isArray(settings.artworks) || settings.artworks.length > MAX_ARTWORKS || !settings.artworks.every(validArtwork)) errors.push(`삽입 SVG는 최대 ${MAX_ARTWORKS}개이며 각 파일의 벡터·배치·회전 값이 유효해야 합니다.`);
+    else if (settings.artworks.reduce((sum, artwork) => sum + artwork.parts.reduce((count, part) => count + part.paths.reduce((points, path) => points + path.length, 0), 0), 0) > MAX_ARTWORK_POINTS) errors.push(`삽입 SVG의 전체 좌표 수는 ${MAX_ARTWORK_POINTS.toLocaleString('ko-KR')}개 이하로 줄여 주세요.`);
+  }
   if (!['mm', 'cm', 'm', 'px'].includes(settings.unit)) errors.push('지원하지 않는 길이 단위입니다.');
   if (!['size', 'ratio'].includes(settings.inputMode)) errors.push('작업 크기 입력 방식을 선택해 주세요.');
   if (typeof settings.seed !== 'string' || settings.seed.length < 1 || settings.seed.length > 128) errors.push('시드는 1~128자로 입력해 주세요.');

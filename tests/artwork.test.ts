@@ -29,6 +29,7 @@ describe('SVG 가져오기', () => {
     expect(artwork.parts[0].color).toBe('#14283c');
     expect(artwork.parts[0].paths[0].length).toBeGreaterThan(10);
     expect(artwork.aspect).toBeCloseTo(31 / 46, 2);
+    expect(artwork).toMatchObject({ avoidance: 'outline', contourMode: 'simplify', contourTolerance: .001 });
   });
   // 상대 명령과 여러 하위 경로를 구분한다.
   it('곡선·원호와 짝홀 채움의 구멍을 유지한다', () => {

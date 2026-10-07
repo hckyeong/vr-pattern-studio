@@ -13,11 +13,32 @@
 .artwork-hint svg { flex-shrink: 0; margin-top: 3px; }
 .artwork-panel > .field, .artwork-panel > .field-row { margin-top: 12px; }
 .artwork-handle { position: absolute; border: 1.5px dashed #729425; cursor: move; touch-action: none; user-select: none; z-index: 2; box-sizing: border-box; }
-.artwork-handle:focus-visible { outline: 3px solid #9eb33b; outline-offset: 3px; }
+.artwork-handle.selected:focus-visible { outline: 3px solid #9eb33b; outline-offset: 3px; }
 .artwork-handle.contour-mode { border-color: transparent; }
 .artwork-handle-label { position: absolute; left: -1px; bottom: calc(100% + 5px); padding: 4px 7px; border-radius: 4px; background: #607d20; color: white; font-size: 10px; white-space: nowrap; }
 .artwork-resize { position: absolute; right: -16px; bottom: -16px; width: 32px; height: 32px; cursor: nwse-resize; }
 .artwork-resize::after { content: ''; position: absolute; inset: 9px; border: 2px solid white; background: #6e861f; border-radius: 3px; }
+/* 여러 삽입 그림의 선택 상태와 회전 손잡이를 파일별로 구분한다. */
+.artwork-list { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 5px; max-height: 220px; overflow: auto; }
+.artwork-list li { display: flex; align-items: center; border: 1px solid #d7dfcc; border-radius: 6px; background: #f8faf2; }
+.artwork-list li.selected { border-color: #729425; background: #eaf1d9; }
+.artwork-select { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1; text-align: left; padding: 9px 7px; font-size: 11px; }
+.artwork-select b { color: #668325; min-width: 15px; }
+.artwork-select span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.artwork-remove { display: grid; place-items: center; padding: 8px; color: #6f7964; }
+.svg-replace { padding: 7px; font-size: 10px; }
+.svg-upload:has(input:disabled) { opacity: .55; cursor: default; }
+.artwork-rotation-actions { display: flex; gap: 5px; margin-top: 7px; }
+.artwork-rotation-actions button { flex: 1; padding: 7px 3px; background: #ecf1e1; border-radius: 5px; font-size: 10px; }
+.artwork-handle { transform-origin: center; }
+.artwork-handle.selected { z-index: 3; }
+/* 선택하지 않은 SVG는 클릭 영역만 남기고 화면 장식을 모두 숨긴다. */
+.artwork-handle.inactive { border-color: transparent; outline: none; }
+.artwork-handle-label { max-width: 180px; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.artwork-rotate-stem { position: absolute; left: 50%; top: -30px; height: 30px; border-left: 1px solid #729425; pointer-events: none; }
+.artwork-rotate { position: absolute; display: grid; place-items: center; left: calc(50% - 14px); top: -45px; width: 28px; height: 28px; border: 2px solid white; border-radius: 50%; background: #6e861f; color: white; cursor: grab; touch-action: none; }
+.artwork-rotate:active { cursor: grabbing; }
+.artwork-rotate:focus-visible { outline: 3px solid #9eb33b; outline-offset: 3px; }
 /* 색상표 편집은 좁은 설정 패널에서도 코드와 비중을 함께 보여 준다. */
 .color-panel { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .color-panel-heading { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #67735e; }
@@ -38,3 +59,6 @@
 .ase-import a { display: flex; gap: 4px; align-items: center; align-self: flex-start; font-size: 11px; color: #677e46; }
 .color-feedback { margin: 0; padding: 8px; border-radius: 5px; background: #edf3e2; font-size: 10px; line-height: 1.7; color: #657749; overflow-wrap: anywhere; }
 .color-error { color: #a65a3e; background: #fff2eb; }
+.fill-mask-panel { display: grid; gap: 12px; }
+.mask-thumbnail { display: block; width: 100%; height: 130px; background: #20252a; border-radius: 8px; }
+.mask-filename { overflow-wrap: anywhere; }

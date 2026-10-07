@@ -1,11 +1,12 @@
-import { boundsOf, pathsConflict } from './geometry';
+import { boundsOf, pathsConflict, pathsConflictPrepared } from './geometry';
+import type { PreparedCollision } from './geometry';
 import type { PatternShape, Point, Polygon } from './types';
 
 interface ContourEdge { start: Point; end: Point; length: number; cumulative: number }
-export interface ContourGuide { paths: Polygon[]; edges: ContourEdge[]; length: number }
+export interface ContourGuide { paths: Polygon[]; edges: ContourEdge[]; length: number; collision?: PreparedCollision }
 
-/** 최외곽의 길이에 비례해 고르게 후보를 뽑을 수 있는 변 목록을 만든다. */
-export function createContourGuide(paths: Polygon[]): ContourGuide {
+/** 최외곽 길이에 비례한 후보용 변 목록을 만들고 선택한 충돌 준비 자료를 연결한다. */
+export function createContourGuide(paths: Polygon[], collision?: PreparedCollision): ContourGuide {
   const edges: ContourEdge[] = [];
   let length = 0;
   for (const path of paths) for (let index = 0; index < path.length; index++) {
@@ -14,7 +15,7 @@ export function createContourGuide(paths: Polygon[]): ContourGuide {
     if (edgeLength <= 1e-8) continue;
     length += edgeLength; edges.push({ start, end, length: edgeLength, cumulative: length });
   }
-  return { paths, edges, length };
+  return { paths, edges, length, ...(collision ? { collision } : {}) };
 }
 
 /** 도형의 형태·회전·크기를 유지하고 최외곽에서 간격을 만족하는 가까운 위치로 옮긴다. */
@@ -35,16 +36,20 @@ export function placeNearContour(shape: PatternShape, guide: ContourGuide, sampl
     const paths = shape.paths.map(path => path.map(point => ({ x: point.x + dx, y: point.y + dy })));
     return { ...shape, paths, bounds: boundsOf(paths) };
   }
+  /** 준비 자료가 있는 가이드는 선분 인덱스로 동일한 충돌 조건을 검사한다. */
+  function conflicts(paths: Polygon[]): boolean {
+    return guide.collision ? pathsConflictPrepared(paths, guide.collision, gap) : pathsConflict(paths, guide.paths, gap);
+  }
   let lastCollision = 0;
   for (let step = 0; step <= 12; step++) {
     const distance = extent * step / 12, candidate = moved(distance);
-    if (pathsConflict(candidate.paths, guide.paths, gap)) { lastCollision = distance; continue; }
+    if (conflicts(candidate.paths)) { lastCollision = distance; continue; }
     if (!step) return candidate;
     let inside = lastCollision, outside = distance, best = candidate;
     // 충돌하지 않는 쪽을 유지하면서 첫 안전 위치를 외곽 가까이 좁힌다.
     for (let iteration = 0; iteration < 12; iteration++) {
       const middle = (inside + outside) / 2, trial = moved(middle);
-      if (pathsConflict(trial.paths, guide.paths, gap)) inside = middle;
+      if (conflicts(trial.paths)) inside = middle;
       else { outside = middle; best = trial; }
     }
     return best;

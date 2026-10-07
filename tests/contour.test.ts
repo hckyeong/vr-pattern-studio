@@ -10,8 +10,8 @@ import { createSheetRegions } from '../src/core/sheets';
 import { exportSvg } from '../src/core/svg';
 import type { PatternShape, Polygon } from '../src/core/types';
 
-/** 외곽과 구멍이 분명한 도형으로 삽입 파일을 구성한다. */
-function artwork(body: string) { return importSvg(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`, '최외곽.svg'); }
+/** 가져오기 기본값과 구분해 원본 최외곽 모드를 명시한 검증 입력을 만든다. */
+function artwork(body: string) { return { ...importSvg(`<svg xmlns="http://www.w3.org/2000/svg">${body}</svg>`, '최외곽.svg'), avoidance: 'silhouette' as const, contourTolerance: 0 }; }
 /** 이동 전후 형태 비교에 사용할 비대칭 도형을 만든다. */
 function triangle(): PatternShape {
   const paths = [[{ x: -13, y: -6 }, { x: 18, y: 2 }, { x: -4, y: 15 }]];
@@ -22,7 +22,7 @@ function relative(paths: Polygon[]) { const anchor = paths[0][0]; return paths.m
 
 describe('SVG 최외곽 보호와 형태 유지', () => {
   // 닫힌 구멍은 보호하지만 바깥으로 열린 오목한 공간은 사각형으로 막지 않는다.
-  it('새 SVG의 최외곽에서 내부 구멍만 채우고 오목함을 유지한다', () => {
+  it('최외곽 모드에서 내부 구멍만 채우고 오목함을 유지한다', () => {
     const ring = artwork('<path fill-rule="evenodd" d="M0 0H100V100H0Z M20 20H80V80H20Z"/>');
     expect(ring.avoidance).toBe('silhouette');
     expect(pathsArea(artworkContour(ring))).toBeCloseTo(1);

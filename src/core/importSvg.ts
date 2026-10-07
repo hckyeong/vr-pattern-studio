@@ -140,7 +140,7 @@ function transformed(paths: Polygon[], transform: string): Polygon[] {
   });
 }
 
-/** SVG를 DOM에 삽입하지 않고 검증된 순수 벡터와 색상으로만 읽어 들인다. */
+/** SVG를 안전한 벡터로 읽고 채움 회피와 균형 간략화를 기본 설정으로 적용한다. */
 export function importSvg(text: string, name: string): SvgArtwork {
   if (text.length > 2_000_000) throw new Error('SVG는 2MB 이하로 단순화해 주세요.');
   if (/<!ENTITY|<\?xml-stylesheet/i.test(text)) throw new Error('외부 엔티티나 스타일 참조가 있는 SVG는 불러올 수 없습니다.');
@@ -206,7 +206,7 @@ export function importSvg(text: string, name: string): SvgArtwork {
   visit(root, BASE, '');
   if (!parts.length) throw new Error('SVG에 표시할 벡터 도형이 없습니다.');
   const bounds = boundsOf(parts.flatMap(part => part.paths)), width = bounds.maxX - bounds.minX, height = bounds.maxY - bounds.minY;
-  const artwork: SvgArtwork = { name: name.slice(0, 200), aspect: height / width, parts: parts.map(part => ({ ...part, paths: part.paths.map(path => path.map(point => ({ x: (point.x - bounds.minX) / width, y: (point.y - bounds.minY) / width }))) })), x: 0.5, y: 0.5, widthRatio: 0.22, avoidance: 'silhouette' };
+  const artwork: SvgArtwork = { name: name.slice(0, 200), aspect: height / width, parts: parts.map(part => ({ ...part, paths: part.paths.map(path => path.map(point => ({ x: (point.x - bounds.minX) / width, y: (point.y - bounds.minY) / width }))) })), x: 0.5, y: 0.5, widthRatio: 0.22, avoidance: 'outline', contourMode: 'simplify', contourTolerance: .001 };
   if (!validArtwork(artwork)) throw new Error('SVG의 크기 비율이나 벡터 데이터가 지원 범위를 벗어났습니다.');
   return artwork;
 }
